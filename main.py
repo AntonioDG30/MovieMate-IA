@@ -16,15 +16,17 @@ df = pd.read_csv("data/nuovo_dataset.csv")
 df.dropna(inplace=True)
 
 # Verifica se ci sono valori mancanti nel dataset
-#print("Valori mancanti nel dataset:")
-#print(df.isnull().sum())
+# print("Valori mancanti nel dataset:")
+# print(df.isnull().sum())
 
 # Dizionario dei 5 temi più comuni per ogni genere
 top_themes_per_genre = {}
 for genre in df['genre'].unique():
-    genre_df = df[df['genre'] == genre].drop(columns=['id', 'genre'])
+    genre_df = df[df['genre'] == genre].drop(
+        columns=['id', 'genre', 'date', 'minute', 'rating'])  # Rimuovi le colonne aggiunte
     top_themes = genre_df.sum().nlargest(10).index.tolist()
     top_themes_per_genre[genre] = top_themes
+
 
 # Funzione per ottenere raccomandazioni di film
 def recommend_movies(X):
@@ -51,6 +53,11 @@ def recommend_movies(X):
                     else:
                         print("Risposta non valida. Si prega di rispondere con 'si' o 'no'.")
 
+            # Nuove domande aggiunte
+            # Aggiunta delle nuove colonne per data, minute e rating
+            user_input_max_duration = int(input("Inserisci la durata massima del film in minuti: "))
+            user_input_min_rating = float(input("Inserisci il rating minimo desiderato: "))
+
             user_input_features = pd.DataFrame(columns=X.columns)
             for col in user_input_features.columns:
                 if col == user_input_genre:
@@ -61,13 +68,18 @@ def recommend_movies(X):
                     user_input_features[col] = [0]
 
             prediction = model.predict(user_input_features)
-            recommended_movies = df[(df['genre'] == label_encoder.inverse_transform(prediction).ravel()[0]) & (df[genre_top_themes].sum(axis=1) >= len(genre_top_themes)//2)]['id'].tolist()
+            recommended_movies = df[(df['genre'] == label_encoder.inverse_transform(prediction).ravel()[0]) &
+                                    (df[genre_top_themes].sum(axis=1) >= len(genre_top_themes) // 2) &
+                                    (df['minute'] <= user_input_max_duration) &
+                                    (df['rating'] >= user_input_min_rating)]['id'].tolist()
+
             if recommended_movies:
                 print("Ti consigliamo i seguenti film:")
                 print(recommended_movies)
             else:
                 print("Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
             print()
+
 
 # Dividi il dataset in variabili indipendenti (X) e variabile dipendente (y)
 X = df.drop(columns=['id', 'genre'])
@@ -93,4 +105,3 @@ model.fit(X_train_imputed, y_train)
 
 # Esegui il chatbot
 recommend_movies(X)
-
