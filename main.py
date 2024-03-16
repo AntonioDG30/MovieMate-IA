@@ -2,6 +2,7 @@ import warnings
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
@@ -76,6 +77,18 @@ def recommend_movies(X):
                 else:
                     user_input_features[col] = [0]
 
+            # Scelta del modello di classificazione
+            print("MovieMate-IA: Quale modello di classificazione desideri utilizzare? (Decision Tree/Random Forest): ")
+            model_choice = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
+
+            if model_choice.lower() == 'decision tree':
+                model = decision_tree_model
+            elif model_choice.lower() == 'random forest':
+                model = random_forest_model
+            else:
+                print("MovieMate-IA: Opzione non valida. Il Decision Tree sarà utilizzato per default.")
+                model = decision_tree_model
+
             prediction = model.predict(user_input_features)
             recommended_movies_ids = df[(df['genre'] == label_encoder.inverse_transform(prediction).ravel()[0]) &
                                         (df[genre_top_themes].sum(axis=1) >= len(genre_top_themes) // 2) &
@@ -92,7 +105,8 @@ def recommend_movies(X):
                 random_movies = recommended_movies_info.sample(n=min(3, len(recommended_movies_info)),
                                                                random_state=random_state)
                 for idx, movie in random_movies.iterrows():
-                    translated_description = GoogleTranslator(source='auto', target='it').translate(movie['description'])
+                    translated_description = GoogleTranslator(source='auto', target='it').translate(
+                        movie['description'])
                     formatted_info = format_movie_info(movie, translated_description)
                     print(formatted_info)
                     print("-" * 50)  # Linea divisoria tra i film consigliati
@@ -100,6 +114,7 @@ def recommend_movies(X):
                 print(
                     "MovieMate-IA: Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
             print()
+
 
 # Funzione per tradurre i temi in italiano
 def translate_themes(themes):
@@ -109,10 +124,12 @@ def translate_themes(themes):
         translated_themes[theme] = translated_theme
     return translated_themes
 
+
 # Funzione per tradurre il genere in inglese solo per confronto
 def translate_genre(genre):
     translated_genre = GoogleTranslator(source='auto', target='en').translate(genre)
     return translated_genre
+
 
 def translate_genre2(genres):
     translated_genres = []
@@ -120,6 +137,7 @@ def translate_genre2(genres):
         translated_genre = GoogleTranslator(source='auto', target='it').translate(genre)
         translated_genres.append(translated_genre)
     return translated_genres
+
 
 # Funzione per suggerire generi simili
 def suggest_similar_genre(genre):
@@ -130,6 +148,7 @@ def suggest_similar_genre(genre):
     similar_genres = get_close_matches(genre, genres)
     translated_similar_genres = translate_genre2(similar_genres)
     return translated_similar_genres
+
 
 # Funzione per ottenere il genere corretto
 def get_correct_genre(genre):
@@ -149,6 +168,14 @@ def get_correct_genre(genre):
                 print("MovieMate-IA: Per favore, inserisci un genere valido: ")
             genre = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ")
 
+# Funzione per formattare le informazioni di un film
+def format_movie_info(movie, description):
+    words = description.split()
+    segmented_description = [words[i:i + 12] for i in range(0, len(words), 12)]
+    formatted_description = '\n'.join([' '.join(segment) for segment in segmented_description])
+    return f"Nome: {movie['name']}\nDescrizione:\n{formatted_description}\nDurata: {movie['minute']} minuti\n"
+
+
 # Dividi il dataset in variabili indipendenti (X) e variabile dipendente (y)
 X = df.drop(columns=['id', 'genre'])
 y = df['genre']
@@ -166,32 +193,48 @@ X_train_imputed = imputer.fit_transform(X_train)
 X_test_imputed = imputer.transform(X_test)
 
 # Crea il modello di classificazione con un decision tree
-model = make_pipeline(DecisionTreeClassifier())
+decision_tree_model = make_pipeline(DecisionTreeClassifier())
 
-# Addestra il modello
-model.fit(X_train_imputed, y_train)
+# Addestra il modello Decision Tree
+decision_tree_model.fit(X_train_imputed, y_train)
 
-# Funzione per formattare le informazioni di un film
-def format_movie_info(movie, description):
-    words = description.split()
-    segmented_description = [words[i:i+12] for i in range(0, len(words), 12)]
-    formatted_description = '\n'.join([' '.join(segment) for segment in segmented_description])
-    return f"Nome: {movie['name']}\nDescrizione:\n{formatted_description}\nDurata: {movie['minute']} minuti\n"
+# Crea il modello di classificazione con un Random Forest
+random_forest_model = make_pipeline(RandomForestClassifier())
+
+# Addestra il modello Random Forest
+random_forest_model.fit(X_train_imputed, y_train)
 
 # Esegui il chatbot
 recommend_movies(X)
 
 # Effettua le predizioni sul set di test
-y_pred = model.predict(X_test_imputed)
+y_pred = decision_tree_model.predict(X_test_imputed)
 
-# Calcola le misure di prestazione
+# Calcola le misure di prestazione per il Decision Tree
 accuracy = accuracy_score(y_test, y_pred)
 precision = precision_score(y_test, y_pred, average='weighted')
 recall = recall_score(y_test, y_pred, average='weighted')
 f1 = f1_score(y_test, y_pred, average='weighted')
 
-# Stampare le misure di prestazione
+# Stampare le misure di prestazione per il Decision Tree
+print("Performance del Decision Tree:")
 print(f'Accuracy: {accuracy}')
 print(f'Precision: {precision}')
 print(f'Recall: {recall}')
 print(f'F1-score: {f1}')
+
+# Effettua le predizioni sul set di test per il Random Forest
+y_pred_rf = random_forest_model.predict(X_test_imputed)
+
+# Calcola le misure di prestazione per il Random Forest
+accuracy_rf = accuracy_score(y_test, y_pred_rf)
+precision_rf = precision_score(y_test, y_pred_rf, average='weighted')
+recall_rf = recall_score(y_test, y_pred_rf, average='weighted')
+f1_rf = f1_score(y_test, y_pred_rf, average='weighted')
+
+# Stampare le misure di prestazione per il Random Forest
+print("Performance del Random Forest:")
+print(f'Accuracy: {accuracy_rf}')
+print(f'Precision: {precision_rf}')
+print(f'Recall: {recall_rf}')
+print(f'F1-score: {f1_rf}')
