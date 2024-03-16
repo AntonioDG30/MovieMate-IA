@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 from deep_translator import GoogleTranslator
 from difflib import get_close_matches
+import random
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -50,7 +51,7 @@ def recommend_movies(X):
             user_theme_responses = {}
             for theme in translated_genre_top_themes:
                 while True:
-                    print(f"MovieMate-IA: Ti piace il tema '{translated_genre_top_themes[theme]}'? (si/no): \n")
+                    print(f"MovieMate-IA: Ti piace il tema '{translated_genre_top_themes[theme]}'? (si/no): ")
                     user_response = input(
                         "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
                     if user_response in ['sì', 'si', 'yes', 'no']:
@@ -80,10 +81,18 @@ def recommend_movies(X):
                                         (df['rating'] >= user_input_min_rating)]['id'].tolist()
 
             recommended_movies_info = movies_df[movies_df['id'].isin(recommended_movies_ids)][
-                ['name', 'description', 'minute']].head(3)
+                ['name', 'description', 'minute']]
             if not recommended_movies_info.empty:
-                print("MovieMate-IA: Ti consigliamo i seguenti film:")
-                print(recommended_movies_info)
+                print("MovieMate-IA: Ti consigliamo i seguenti film:\n")
+                # Imposta uno stato casuale diverso ad ogni esecuzione
+                random_state = random.randint(1, 1000)
+                # Seleziona casualmente 3 film dall'elenco raccomandato
+                random_movies = recommended_movies_info.sample(n=3, random_state=random_state)
+                for idx, movie in random_movies.iterrows():
+                    translated_description = GoogleTranslator(source='auto', target='it').translate(movie['description'])
+                    formatted_info = format_movie_info(movie, translated_description)
+                    print(formatted_info)
+                    print("-" * 50)  # Linea divisoria tra i film consigliati
             else:
                 print(
                     "MovieMate-IA: Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
@@ -104,6 +113,7 @@ def translate_genre(genre):
     translated_genre = GoogleTranslator(source='auto', target='en').translate(genre)
     return translated_genre
 
+
 def translate_genre2(genres):
     translated_genres = []
     for genre in genres:
@@ -123,7 +133,6 @@ def suggest_similar_genre(genre):
     return translated_similar_genres
 
 
-
 # Funzione per ottenere il genere corretto
 def get_correct_genre(genre):
     while True:
@@ -134,11 +143,13 @@ def get_correct_genre(genre):
             # Suggerisci generi simili
             similar_genres = suggest_similar_genre(genre)
             if similar_genres:
-                print(f"MovieMate-IA: Il genere '{genre}' non è valido. Forse intendevi: {', '.join(similar_genres)}")
+                print(
+                    f"MovieMate-IA: Il genere '{genre}' non è valido. Forse intendevi: {', '.join(similar_genres)}")
             else:
-                print("MovieMate-IA: Il genere inserito non è valido e non sono stati trovati generi simili.")
-            genre = input("MovieMate-IA: Per favore, inserisci un genere valido: ")
-
+                print(
+                    "MovieMate-IA: Il genere inserito non è valido e non sono stati trovati generi simili.")
+                print("MovieMate-IA: Per favore, inserisci un genere valido: ")
+            genre = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ")
 
 
 # Dividi il dataset in variabili indipendenti (X) e variabile dipendente (y)
@@ -162,6 +173,13 @@ model = make_pipeline(DecisionTreeClassifier())
 
 # Addestra il modello
 model.fit(X_train_imputed, y_train)
+
+# Funzione per formattare le informazioni di un film
+def format_movie_info(movie, description):
+    words = description.split()
+    segmented_description = [words[i:i+12] for i in range(0, len(words), 12)]
+    formatted_description = '\n'.join([' '.join(segment) for segment in segmented_description])
+    return f"Nome: {movie['name']}\nDescrizione:\n{formatted_description}\nDurata: {movie['minute']} minuti\n"
 
 # Esegui il chatbot
 recommend_movies(X)
