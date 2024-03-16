@@ -44,9 +44,10 @@ Meet the team behind MovieMate-IA:
           pip install scikit-learn
           ```
      - Deep_translator with cmd comand:
-      ```bash
+       ```bash
           pip install deep_translator
-          ```      
+          ```
+
 2. **Clone the Repository:**
 
     ```bash
