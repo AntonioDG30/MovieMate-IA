@@ -46,7 +46,7 @@ Meet the team behind MovieMate-IA:
      - Deep_translator with cmd comand:
       ```bash
           pip install deep_translator
-          ```       
+          ```      
 2. **Clone the Repository:**
 
     ```bash
