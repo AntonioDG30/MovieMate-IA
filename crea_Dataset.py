@@ -9,7 +9,7 @@ def merge_movies_data(final_df):
     df_movies['id'] = df_movies['id'].astype(str)
 
     # Seleziona solo le colonne necessarie dal DataFrame dei film
-    df_movies = df_movies[['id', 'date', 'minute', 'rating']]
+    df_movies = df_movies[['id', 'minute', 'rating']]
 
     # Merge dei dati dei film con il DataFrame finale basato sull'ID
     final_df = final_df.merge(df_movies, on='id', how='left')

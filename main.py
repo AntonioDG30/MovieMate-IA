@@ -31,14 +31,15 @@ for genre in df['genre'].unique():
 
 # Funzione per ottenere raccomandazioni di film
 def recommend_movies(X):
-    print("Benvenuto al nostro servizio di consigli sui film!")
+    print("MovieMate-IA: Benvenuto in MovieMate-IA, il tuo suggeritore personale di film!")
     while True:
-        response = input("Sei interessato a un film? (si/no): ").lower()
+        print("MovieMate-IA: Vuoi un consiglio per un nuovo film? (si/no): ")
+        response = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
         if response != 'si':
-            print("Grazie per aver utilizzato il nostro servizio!")
+            print("MovieMate-IA: Grazie per aver utilizzato il nostro servizio!")
             break
         else:
-            user_input_genre = input("Per favore, inserisci il tuo genere preferito di film: ")
+            user_input_genre = input("MovieMate-IA: Per favore, inserisci il tuo genere di film che vorresti vedere: ")
             translated_genre = get_correct_genre(user_input_genre)
             if not translated_genre:
                 continue
@@ -49,18 +50,21 @@ def recommend_movies(X):
             user_theme_responses = {}
             for theme in translated_genre_top_themes:
                 while True:
+                    print(f"MovieMate-IA: Ti piace il tema '{translated_genre_top_themes[theme]}'? (si/no): \n")
                     user_response = input(
-                        f"Ti piace il tema '{translated_genre_top_themes[theme]}'? (sì/si/no): ").lower()
+                        "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
                     if user_response in ['sì', 'si', 'yes', 'no']:
                         user_theme_responses[theme] = 1 if user_response in ['sì', 'si', 'yes'] else 0
                         break
                     else:
-                        print("Risposta non valida. Si prega di rispondere con 'sì' o 'no'.")
+                        print("MovieMate-IA: Risposta non valida. Si prega di rispondere con 'sì' o 'no'.")
 
             # Nuove domande aggiunte
             # Aggiunta delle nuove colonne per data, minute e rating
-            user_input_max_duration = int(input("Inserisci la durata massima del film in minuti: "))
-            user_input_min_rating = float(input("Inserisci il rating minimo desiderato: "))
+            print("MovieMate-IA: Inserisci la durata massima del film in minuti: ")
+            user_input_max_duration = int(input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: "))
+            print("MovieMate-IA: Inserisci il rating minimo desiderato: ")
+            user_input_min_rating = float(input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: "))
 
             user_input_features = pd.DataFrame(columns=X.columns)
             for col in user_input_features.columns:
@@ -78,11 +82,11 @@ def recommend_movies(X):
             recommended_movies_info = movies_df[movies_df['id'].isin(recommended_movies_ids)][
                 ['name', 'description', 'minute']].head(3)
             if not recommended_movies_info.empty:
-                print("Ti consigliamo i seguenti film:")
+                print("MovieMate-IA: Ti consigliamo i seguenti film:")
                 print(recommended_movies_info)
             else:
                 print(
-                    "Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
+                    "MovieMate-IA: Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
             print()
 
 
@@ -130,10 +134,10 @@ def get_correct_genre(genre):
             # Suggerisci generi simili
             similar_genres = suggest_similar_genre(genre)
             if similar_genres:
-                print(f"Il genere '{genre}' non è valido. Forse intendevi: {', '.join(similar_genres)}")
+                print(f"MovieMate-IA: Il genere '{genre}' non è valido. Forse intendevi: {', '.join(similar_genres)}")
             else:
-                print("Il genere inserito non è valido e non sono stati trovati generi simili.")
-            genre = input("Per favore, inserisci un genere valido: ")
+                print("MovieMate-IA: Il genere inserito non è valido e non sono stati trovati generi simili.")
+            genre = input("MovieMate-IA: Per favore, inserisci un genere valido: ")
 
 
 
