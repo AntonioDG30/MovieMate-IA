@@ -5,6 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from deep_translator import GoogleTranslator
 from difflib import get_close_matches
 import random
@@ -40,7 +41,8 @@ def recommend_movies(X):
             print("MovieMate-IA: Grazie per aver utilizzato il nostro servizio!")
             break
         else:
-            user_input_genre = input("MovieMate-IA: Per favore, inserisci il tuo genere di film che vorresti vedere: ")
+            print("MovieMate-IA: Per favore, inserisci il tuo genere di film che vorresti vedere: ")
+            user_input_genre = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ")
             translated_genre = get_correct_genre(user_input_genre)
             if not translated_genre:
                 continue
@@ -87,7 +89,8 @@ def recommend_movies(X):
                 # Imposta uno stato casuale diverso ad ogni esecuzione
                 random_state = random.randint(1, 1000)
                 # Seleziona casualmente 3 film dall'elenco raccomandato
-                random_movies = recommended_movies_info.sample(n=3, random_state=random_state)
+                random_movies = recommended_movies_info.sample(n=min(3, len(recommended_movies_info)),
+                                                               random_state=random_state)
                 for idx, movie in random_movies.iterrows():
                     translated_description = GoogleTranslator(source='auto', target='it').translate(movie['description'])
                     formatted_info = format_movie_info(movie, translated_description)
@@ -98,7 +101,6 @@ def recommend_movies(X):
                     "MovieMate-IA: Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
             print()
 
-
 # Funzione per tradurre i temi in italiano
 def translate_themes(themes):
     translated_themes = {}
@@ -107,12 +109,10 @@ def translate_themes(themes):
         translated_themes[theme] = translated_theme
     return translated_themes
 
-
 # Funzione per tradurre il genere in inglese solo per confronto
 def translate_genre(genre):
     translated_genre = GoogleTranslator(source='auto', target='en').translate(genre)
     return translated_genre
-
 
 def translate_genre2(genres):
     translated_genres = []
@@ -120,7 +120,6 @@ def translate_genre2(genres):
         translated_genre = GoogleTranslator(source='auto', target='it').translate(genre)
         translated_genres.append(translated_genre)
     return translated_genres
-
 
 # Funzione per suggerire generi simili
 def suggest_similar_genre(genre):
@@ -131,7 +130,6 @@ def suggest_similar_genre(genre):
     similar_genres = get_close_matches(genre, genres)
     translated_similar_genres = translate_genre2(similar_genres)
     return translated_similar_genres
-
 
 # Funzione per ottenere il genere corretto
 def get_correct_genre(genre):
@@ -150,7 +148,6 @@ def get_correct_genre(genre):
                     "MovieMate-IA: Il genere inserito non è valido e non sono stati trovati generi simili.")
                 print("MovieMate-IA: Per favore, inserisci un genere valido: ")
             genre = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ")
-
 
 # Dividi il dataset in variabili indipendenti (X) e variabile dipendente (y)
 X = df.drop(columns=['id', 'genre'])
@@ -183,3 +180,18 @@ def format_movie_info(movie, description):
 
 # Esegui il chatbot
 recommend_movies(X)
+
+# Effettua le predizioni sul set di test
+y_pred = model.predict(X_test_imputed)
+
+# Calcola le misure di prestazione
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred, average='weighted')
+recall = recall_score(y_test, y_pred, average='weighted')
+f1 = f1_score(y_test, y_pred, average='weighted')
+
+# Stampare le misure di prestazione
+print(f'Accuracy: {accuracy}')
+print(f'Precision: {precision}')
+print(f'Recall: {recall}')
+print(f'F1-score: {f1}')
