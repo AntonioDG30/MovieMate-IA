@@ -54,11 +54,15 @@ Meet the team behind MovieMate-IA:
     git clone https://github.com/AntonioDG30/MovieMate-IA
     ```
 
-3. **Build and Deploy:**
+3. **Undeploy data.rar in data folder:**
+   
+    - you will need to have four .CSV files in your folder.
+
+4. **Build and Deploy:**
 
     - Set up your Python environment.
 
-4. **Use MovieMate-IA**
+5. **Use MovieMate-IA**
 
 
 
