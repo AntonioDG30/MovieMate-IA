@@ -56,7 +56,7 @@ Meet the team behind MovieMate-IA:
 
 3. **Undeploy data.rar in data folder:**
    
-    - you will need to have four .CSV files in your folder.
+    - You will need to have four .CSV files in your folder.
 
 4. **Build and Deploy:**
 
