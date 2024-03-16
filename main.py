@@ -1,15 +1,19 @@
 import warnings
 import pandas as pd
+import random
+import matplotlib.pyplot as plt  # Importa matplotlib per la visualizzazione grafica
+import numpy as np  # Importa NumPy per la gestione di array e operazioni matematiche
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from deep_translator import GoogleTranslator
 from difflib import get_close_matches
-import random
+
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -77,18 +81,6 @@ def recommend_movies(X):
                 else:
                     user_input_features[col] = [0]
 
-            # Scelta del modello di classificazione
-            print("MovieMate-IA: Quale modello di classificazione desideri utilizzare? (Decision Tree/Random Forest): ")
-            model_choice = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
-
-            if model_choice.lower() == 'decision tree':
-                model = decision_tree_model
-            elif model_choice.lower() == 'random forest':
-                model = random_forest_model
-            else:
-                print("MovieMate-IA: Opzione non valida. Il Decision Tree sarà utilizzato per default.")
-                model = decision_tree_model
-
             prediction = model.predict(user_input_features)
             recommended_movies_ids = df[(df['genre'] == label_encoder.inverse_transform(prediction).ravel()[0]) &
                                         (df[genre_top_themes].sum(axis=1) >= len(genre_top_themes) // 2) &
@@ -105,8 +97,7 @@ def recommend_movies(X):
                 random_movies = recommended_movies_info.sample(n=min(3, len(recommended_movies_info)),
                                                                random_state=random_state)
                 for idx, movie in random_movies.iterrows():
-                    translated_description = GoogleTranslator(source='auto', target='it').translate(
-                        movie['description'])
+                    translated_description = GoogleTranslator(source='auto', target='it').translate(movie['description'])
                     formatted_info = format_movie_info(movie, translated_description)
                     print(formatted_info)
                     print("-" * 50)  # Linea divisoria tra i film consigliati
@@ -114,7 +105,6 @@ def recommend_movies(X):
                 print(
                     "MovieMate-IA: Ci dispiace, non abbiamo raccomandazioni per questo genere o i tuoi criteri di selezione.")
             print()
-
 
 # Funzione per tradurre i temi in italiano
 def translate_themes(themes):
@@ -124,12 +114,10 @@ def translate_themes(themes):
         translated_themes[theme] = translated_theme
     return translated_themes
 
-
 # Funzione per tradurre il genere in inglese solo per confronto
 def translate_genre(genre):
     translated_genre = GoogleTranslator(source='auto', target='en').translate(genre)
     return translated_genre
-
 
 def translate_genre2(genres):
     translated_genres = []
@@ -137,7 +125,6 @@ def translate_genre2(genres):
         translated_genre = GoogleTranslator(source='auto', target='it').translate(genre)
         translated_genres.append(translated_genre)
     return translated_genres
-
 
 # Funzione per suggerire generi simili
 def suggest_similar_genre(genre):
@@ -148,7 +135,6 @@ def suggest_similar_genre(genre):
     similar_genres = get_close_matches(genre, genres)
     translated_similar_genres = translate_genre2(similar_genres)
     return translated_similar_genres
-
 
 # Funzione per ottenere il genere corretto
 def get_correct_genre(genre):
@@ -171,13 +157,22 @@ def get_correct_genre(genre):
 # Funzione per formattare le informazioni di un film
 def format_movie_info(movie, description):
     words = description.split()
-    segmented_description = [words[i:i + 12] for i in range(0, len(words), 12)]
+    segmented_description = [words[i:i+12] for i in range(0, len(words), 12)]
     formatted_description = '\n'.join([' '.join(segment) for segment in segmented_description])
     return f"Nome: {movie['name']}\nDescrizione:\n{formatted_description}\nDurata: {movie['minute']} minuti\n"
 
+# Funzione per la scelta del modello di classificazione
+def choose_model():
+    while True:
+        print("MovieMate-IA: Quale modello di classificazione desideri utilizzare? (Decision Tree/Random Forest/Naive Bayes/GBM): ")
+        model_choice = input("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tYou: ").lower()
+        if model_choice in ['decision tree', 'random forest', 'naive bayes', 'gbm']:
+            return model_choice
+        else:
+            print("MovieMate-IA: Scelta non valida. Per favore, scegli tra Decision Tree, Random Forest, Naive Bayes e GBM.")
 
 # Dividi il dataset in variabili indipendenti (X) e variabile dipendente (y)
-X = df.drop(columns=['id', 'genre'])
+X = df.drop(columns=['id', 'genre', 'minute', 'rating'])
 y = df['genre']
 
 # Codifica le etichette di genere
@@ -192,49 +187,57 @@ imputer = SimpleImputer(strategy='mean')
 X_train_imputed = imputer.fit_transform(X_train)
 X_test_imputed = imputer.transform(X_test)
 
-# Crea il modello di classificazione con un decision tree
-decision_tree_model = make_pipeline(DecisionTreeClassifier())
+# Scegli il modello di classificazione
+chosen_model = choose_model()
 
-# Addestra il modello Decision Tree
-decision_tree_model.fit(X_train_imputed, y_train)
+if chosen_model == 'decision tree':
+    # Crea il modello di classificazione con un decision tree
+    model = make_pipeline(DecisionTreeClassifier())
 
-# Crea il modello di classificazione con un Random Forest
-random_forest_model = make_pipeline(RandomForestClassifier())
+elif chosen_model == 'random forest':
+    # Crea il modello di classificazione con un random forest
+    model = make_pipeline(RandomForestClassifier())
 
-# Addestra il modello Random Forest
-random_forest_model.fit(X_train_imputed, y_train)
+elif chosen_model == 'naive bayes':
+    # Crea il modello di classificazione con Gaussian Naive Bayes
+    model = make_pipeline(GaussianNB())
+
+elif chosen_model == 'gbm':
+    # Crea il modello di classificazione con Gradient Boosting Machine (GBM)
+    model = make_pipeline(GradientBoostingClassifier())
+
+# Addestra il modello
+model.fit(X_train_imputed, y_train)
 
 # Esegui il chatbot
 recommend_movies(X)
 
 # Effettua le predizioni sul set di test
-y_pred = decision_tree_model.predict(X_test_imputed)
+y_pred = model.predict(X_test_imputed)
 
-# Calcola le misure di prestazione per il Decision Tree
+# Calcola le misure di prestazione
 accuracy = accuracy_score(y_test, y_pred)
 precision = precision_score(y_test, y_pred, average='weighted')
 recall = recall_score(y_test, y_pred, average='weighted')
 f1 = f1_score(y_test, y_pred, average='weighted')
 
-# Stampare le misure di prestazione per il Decision Tree
-print("Performance del Decision Tree:")
+# Stampare le misure di prestazione
+print(f'Performance del {chosen_model.capitalize()}:')
 print(f'Accuracy: {accuracy}')
 print(f'Precision: {precision}')
 print(f'Recall: {recall}')
 print(f'F1-score: {f1}')
 
-# Effettua le predizioni sul set di test per il Random Forest
-y_pred_rf = random_forest_model.predict(X_test_imputed)
-
-# Calcola le misure di prestazione per il Random Forest
-accuracy_rf = accuracy_score(y_test, y_pred_rf)
-precision_rf = precision_score(y_test, y_pred_rf, average='weighted')
-recall_rf = recall_score(y_test, y_pred_rf, average='weighted')
-f1_rf = f1_score(y_test, y_pred_rf, average='weighted')
-
-# Stampare le misure di prestazione per il Random Forest
-print("Performance del Random Forest:")
-print(f'Accuracy: {accuracy_rf}')
-print(f'Precision: {precision_rf}')
-print(f'Recall: {recall_rf}')
-print(f'F1-score: {f1_rf}')
+# Calcola e visualizza la matrice di confusione
+confusion_matrix = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(8, 6))
+plt.imshow(confusion_matrix, interpolation='nearest', cmap=plt.cm.Blues)
+plt.title('Matrice di Confusione')
+plt.colorbar()
+tick_marks = np.arange(len(label_encoder.classes_))
+plt.xticks(tick_marks, label_encoder.classes_, rotation=45)
+plt.yticks(tick_marks, label_encoder.classes_)
+plt.tight_layout()
+plt.ylabel('Valore vero')
+plt.xlabel('Valore predetto')
+plt.show()
