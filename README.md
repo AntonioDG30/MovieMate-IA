@@ -63,7 +63,7 @@ Meet the team behind MovieMate-IA:
     - Set up your Python environment.
   
 ## Info
-    - For correct use, the PC must have an active internet connection
+For correct use, the PC must have an active internet connection
 
 5. **Use MovieMate-IA**
 
