@@ -61,6 +61,9 @@ Meet the team behind MovieMate-IA:
 4. **Build and Deploy:**
 
     - Set up your Python environment.
+  
+## Info
+    - For correct use, the PC must have an active internet connection
 
 5. **Use MovieMate-IA**
 
